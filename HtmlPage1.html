@@ -1,0 +1,148 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Quản Lý Sách</title>
+
+</head>
+<body>
+    <div>
+        <h2>Danh Sách</h2>
+        <ul id="sachs" />
+    </div>
+    <div>
+        <h2>Tìm Kiếm  Mã Sách</h2>
+        <input type="text" id="Id" size="5" />
+        <input type="button" value="Search" onclick="find();" />
+        <p id="sach" />
+    </div>
+    <div>
+        <h2>Thêm </h2>
+        <p>Title: <input type="text" id="Title" /></p>
+        <p>Contentt: <input type="text" id="Contentt" /></p>
+        <p>AuthorName: <input type="text" id="AuthorName" /></p>
+        <p>Price: <input type="text" id="Price" /></p>
+        <button type="submit" id="add">Add</button>
+        <button type="submit" id="edit">Edit</button>
+    </div>
+    <script src="jquery-2.0.3.min.js"></script>
+    <script>
+        let indexEdit = -1;
+        var $Title = $('#Title');
+        var $Contentt = $('#Contentt');
+        var $AuthorName = $('#AuthorName')
+        var $Price = $('#Price');
+        var uri = '/api/sach';
+        // Get all
+        function getAll() {
+            $('#sachs').text("");
+            $(document).ready(function () {
+                $.getJSON(uri)
+                    .done(function (data) {
+                        $.each(data, function (key, item) {
+                            let ele = $('<li>', { text: formatItem(item) })
+                            //Nut xoa
+                            let btnxoa = $('<span>', { text: "| Delete" })
+                            btnxoa.on('click', function () {
+                                DeleteBook(item.id)
+                            })
+                            btnxoa.css("cursor", "pointer")
+                            btnxoa.css("color", "blue")
+                            btnxoa.css("margin-left", "10px")
+                            btnxoa.appendTo(ele)
+
+                            //Nut sua
+                            let btnSua = $('<span>', { text: "| Edit" })
+                            btnSua.on('click', function () {
+                                setval(item)
+                                indexEdit = item.id
+                            })
+                            btnSua.css("cursor", "pointer")
+                            btnSua.css("color", "blue")
+                            btnSua.css("margin-left", "10px")
+                            btnSua.appendTo(ele)
+
+                            ele.appendTo($('#sachs'));
+                        });
+                    });
+            });
+        }
+        getAll();
+        function formatItem(item) {
+            return item.Id + "-" + item.Title + ': $' + item.Price;
+        }
+
+        function find() {
+            var id = $('#Id').val();
+            $.getJSON(uri + '/' + id)
+                .done(function (data) {
+                    if (data != null) {
+                        $('#sach').text(formatItem(data));
+                    } else {
+                        $('#sach').text('Error: Không Tìm Thấy Sách!');
+                    }
+                })
+                .fail(function (jqXHR, textStatus, err) {
+                    $('#sach').text('Error:' + err);
+                });
+        }
+
+        $('#add').on('click', function () {
+            var sach = {
+                Title: $Title.val(),
+                Contentt: $Contentt.val(),
+                AuthorNam: $AuthorName.val(),
+                Price: $Price.val()
+            };
+
+            $.post("/api/sach", sach, function () {
+                getAll();
+            })
+        })
+
+        function DeleteBook(id) {
+            console.log(id)
+            $.ajax({
+                url: uri + "/" + id,
+                type: 'DELETE',
+                success: function () {
+                    getAll();
+                }
+            })
+        }
+        //load to inputbox
+        function setval(sach) {
+            $Title.val(sach.Title)
+            $Contentt.val(sach.Contentt)
+            $AuthorName.val(sach.AuthorName)
+            $Price.val(sach.price)
+        }
+
+
+        //Edit
+        $('#edit').on('click', function () {
+            if (indexEdit == -1) return;
+            var sach = {
+                id: indexEdit,
+                Title: $Title.val(),
+                Contentt: $Contentt.val(),
+                AthorName: $AuthorName.val(),
+                Price: $Price.val(),
+            };
+            if (sach.Title == "" || sach.Contentt == "" || sach.AthorName == "" || sach.Price == "") return;
+
+            $.ajax({
+                method: "PUT",
+                url: "/api/sach",
+                data: sach,
+                success: function () {
+                    getAll();
+                    indexEdit = -1;
+                }
+            })
+        })
+
+    </script>
+
+</body>
+</html>
